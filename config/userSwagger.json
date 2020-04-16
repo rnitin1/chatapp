@@ -1,0 +1,28 @@
+{
+    "swagger": "2.0",
+    "info":{
+        "title":"Chat-App",
+        "description": "basic chat application"
+    },
+    "produces":[
+        "application/json"
+    ],
+    "host":"localhost:5000",
+    "basepath":"",
+    "paths":{
+        "/emailverificationforsignup":{
+            "post":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"emailverfication",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"email",
+                    "required":"true",
+                    "description":"Enter email",
+                    "type":"string",
+                    "value":""
+                }]
+            }
+        }
+    }
+}
