@@ -4,6 +4,7 @@ const user = require('./routes/user')
 const swaggerUi = require('swagger-ui-express');
 const swaggerJsDocs = require("./config/userSwagger.json");
 const mongoose = require('mongoose');
+const path = require('path')
 
 //initializing swagger
 app.use('/documentation',swaggerUi.serve,swaggerUi.setup(swaggerJsDocs));
@@ -14,7 +15,11 @@ mongoose.connect("mongodb://localhost/chatapp"
             ,useUnifiedTopology:true}
 )
 
+
+app.set('views',path.join(__dirname,'views'))
+app.set('view engine','ejs')
 //middlewares
+app.use(express.static('./uploader'))
 app.use(express.urlencoded({extended:false}))
 
 app.use('/',user);

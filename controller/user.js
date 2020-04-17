@@ -7,6 +7,47 @@ const nodemailer= require('nodemailer')
 const async = require('async');
 
 
+// Registering the user
+exports.signup = (req,res)=>{
+    User.findOne({email:req.body.email},async (err,user)=>{
+        if(user){
+            return res.send('Email already exists')
+        }else{
+            //validation schema
+            const validateData = (user)=>{
+                const schema = {
+                    name:joi.string().trim().min(3),
+                    email:joi.string().trim().email(),
+                    password:joi.string().regex(/^[a-zA-Z0-9!@#$%&*]{3,25}$/).min(6),
+                    phoneNumber:joi.number().min(10).max(10),
+                    age:joi.string().max(2)
+                }
+                return joi.validate(user,schema);
+            }
+            let {error} = validateData(req.body) // equals to result.error or object destructuring
+            if(error ) return res.status(404).send(error.details[0].message);
+
+            // saving data in the data base
+            try {
+                const hashPassword =await bcrypt.hash(req.body.password,10)
+                const user = new User({
+                    _id:new mongoose.Types.ObjectId,
+                    name: req.body.name,
+                    email:req.body.email,
+                    password:hashPassword,
+                    phoneNumber:req.body.phoneNumber                  
+                })
+                const saveData=user.save()
+                    .then(result=>console.log(result))
+                    .catch(err=>console.log(err))                
+                
+            } catch (error) {
+                
+            }
+        }
+    })
+}
+
 //Sending OTP for Email verification
 exports.emailverification = (req,res)=>{
     async.waterfall([
@@ -16,9 +57,9 @@ exports.emailverification = (req,res)=>{
                 let token = buf.toString('hex');
                     done(err,token)
                 })
-            },
+        },
         // checking whether email exists or not
-        (done,token)=>{
+        (token,done)=>{
             User.findOne({email:req.body.email},(err,user)=>{
                 console.log('hello',req.body);
                 
