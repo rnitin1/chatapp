@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const nodemailer= require('nodemailer')
 const async = require('async');
+const EmailVer = require('../models/emailVerification')
 
 
 // Registering the user
@@ -19,8 +20,10 @@ exports.signup = (req,res)=>{
                     name:joi.string().trim().min(3),
                     email:joi.string().trim().email(),
                     password:joi.string().regex(/^[a-zA-Z0-9!@#$%&*]{3,25}$/).min(6),
-                    phoneNumber:joi.number().min(10).max(10),
-                    age:joi.string().max(2)
+                    phoneNumber:joi.number(),
+                    age:joi.string().max(2),
+                    token:joi.string()
+                    
                 }
                 return joi.validate(user,schema);
             }
@@ -35,15 +38,42 @@ exports.signup = (req,res)=>{
                     name: req.body.name,
                     email:req.body.email,
                     password:hashPassword,
-                    phoneNumber:req.body.phoneNumber                  
+                    phoneNumber:req.body.phoneNumber,
+                    age:req.body.age,
+                               
                 })
                 const saveData=user.save()
                     .then(result=>console.log(result))
                     .catch(err=>console.log(err))                
                 
             } catch (error) {
-                
+                res.send(error)
             }
+            async.waterfall([
+                (done)=>{
+                    //checking OTP 
+                    EmailVer.findOne({emailVerificationToken:req.body.token,
+                        emailVerificationExpire:{$gt:Date.now()}},
+                        (err,user)=>{
+                            if (!user) {
+                                return res.send(`OTP is invalid or has expired ${err}`)
+                            } else {
+                                    //user.setPassword(req.body.newpassword,(err)=>{
+                                        user.emailVerificationToken=undefined;
+                                        user.emailVerificationExpire=undefined;
+                                            user.save((err,user)=>{
+                                                if (err) {
+                                                    return res.send(err)
+                                                }
+                                                res.send('Registered successfully ');
+                                            })
+                                   // })
+                              
+                            }
+                        })
+                }
+            ])
+            
         }
     })
 }
@@ -54,27 +84,32 @@ exports.emailverification = (req,res)=>{
         // creating otp or token
         (done)=>{
             crypto.randomBytes(2,(err,buf)=>{
-                let token = buf.toString('hex');
-                    done(err,token)
-                })
+            let token = buf.toString('hex');
+            done(err,token)
+           })
         },
         // checking whether email exists or not
         (token,done)=>{
+        
             User.findOne({email:req.body.email},(err,user)=>{
                 console.log('hello',req.body);
                 
                 if(user){
                     return res.send('Email already registered')
                 }else{
-                //saving the token in the database            
-                    user.emailVerificationToken =token;
-                    user.emailVerificationExpire=Date.now()+3600000;
-                }
-                user.save((err)=>{
-                    done(err,token,user)
+                //saving the token in the database 
+                    const user = new EmailVer({
+                        emailVerificationToken : token,
+                        emailVerificationExpire:Date.now()+3600000
+                    })           
 
-                })                        
+                    user.save((err)=>{
+                        done(err,token,user)
+                })
+
+                }                        
             })
+
         },
         (token,user,done)=>{
             if(req.body.email){
@@ -83,7 +118,7 @@ exports.emailverification = (req,res)=>{
                     service:'Gmail',
                     auth:{
                         user:'nitinrana000111@gmail.com',
-                        pass : process.env.GMAILPW
+                        pass:process.env.GMAILPW
                     }
                 })
                 const mailOptions={
@@ -93,7 +128,7 @@ exports.emailverification = (req,res)=>{
                     text:'OTP : '+ token
                 }
                 smtpTransport.sendMail(mailOptions,(err)=>{
-                    res.send('OTO sent');
+                    res.send('OTP sent');
                 })
             }
         }
@@ -101,4 +136,283 @@ exports.emailverification = (req,res)=>{
     ],(err)=>{
     return res.send(err)
 })
+}
+
+//login
+exports.login= (checkNotAuthenticate,(req,res)=>{
+    res.send(`Welcome `)
+    
+ })
+
+
+ //logout
+ exports.logout=(req,res)=>{
+    req.logOut();
+    return res.send('Logged out')
+}
+
+ //changepassword 
+ exports.changepassword = (req,res)=>{
+    sess=req.session;
+
+    //checking whether in session
+    if (sess.passport.user.email) {
+        // validating change password 
+        const validateChangepassword = (user)=>{
+            const schema = {
+                newpassword:joi.string().min(6).regex(/^[a-zA-Z0-9!@#$%&*]{3,25}$/),
+                password:joi.string(),
+                confirmpassword:joi.string()
+            }
+            return joi.validate(user,schema)
+        }
+        let {error}=validateChangepassword(req.body);//object distucturing(result.error)
+        if(error ) return res.status(404).send(error.details[0].message);
+    
+        const oldPassword=req.body.password;
+        const newPassword=req.body.newpassword;
+        const confirmPassword=req.body.confirmpassword;
+
+        //checking whether email is in session or not
+        User.findOne({'email':sess.passport.user.email},async (err,user)=>{
+            //console.log('testing 2',req.body)
+
+            if(user !=null){
+                //comparing password
+                await bcrypt.compare(oldPassword,user.password,async (err,res)=>{
+                    if (res) {
+                        //confirming password
+                        if (newPassword==confirmPassword) {
+                            await bcrypt.hash(newPassword,10,(err,hash)=>{
+                                user.password=hash;
+                                console.log('newpassword',user.password);
+                                
+                                user.save((err,user)=>{
+                                    if (err) {
+                                        return console.log(err);
+                                        
+                                    } else {
+                                        console.log('Your password has been changed');
+                                        
+                                    }
+                                })
+                            })
+                        }
+                    }
+                    
+                })
+            }
+
+        })       
+    }    
+}
+
+//forgotpassord
+//-------------Sending OTP to user by nodemailer
+exports.resetpasswordtoken= (req,res,next)=>{
+    async.waterfall([
+        (done)=>{
+            //creating token or OTP
+            crypto.randomBytes(2,(err,buf)=>{
+                let token = buf.toString('hex');
+                done(err,token)
+            })
+        },
+        //Checking whether mail exists or not
+        (token,done)=>{
+            User.findOne({email:req.body.email},(err,user)=>{
+                if (!user) {
+                    return res.send('No user with this Email')
+                    
+                    
+                }else{
+                    //assigning token to user
+                    user.passwordResetToken=token;
+                    user.passwordResetExpire=Date.now()+3600000;//hour
+                }
+                user.save((err)=>{
+                    done(err,token,user)
+                })
+            })
+        },
+        //Initializing nodemailer
+        (token,user,done)=>{
+            const smtpTransport = nodemailer.createTransport({
+                service:'Gmail',
+                auth:{
+                    user:'nitinrana000111@gmail.com',
+                    pass:process.env.GMAILPW
+                }
+            })
+            const mailOptions = {
+                to:user.email,
+                from: 'nitinrana000111@gmail.com',
+                subject:"Password reset OTP",
+                text:'OTP : '+token
+            }
+            smtpTransport.sendMail(mailOptions,(err)=>{
+                console.log('mail sent');
+                res.send('OTP sent')
+                return done(err)
+            })
+        }
+    ],
+    (err)=>{
+        if (err) {
+            //res.send(err)
+            return next(err)
+            
+        }
+    })
+
+}
+
+// ----------------Reseting the password by OTP
+exports.resetpassword = (req,res)=>{
+    async.waterfall([
+        (done)=>{
+            //checking OTP 
+            User.findOne({passwordResetToken:req.body.token,
+                passwordResetExpire:{$gt:Date.now()}},
+                (err,user)=>{
+                    if (!user) {
+                        return res.send(`OTP is invalid or has expired ${err}`)
+                    } else {
+                        if (req.body.password===req.body.confirmpassword) {
+                            //user.setPassword(req.body.newpassword,(err)=>{
+                                user.resetPasswordToken=undefined;
+                                user.resetPasswordExpire=undefined;
+                                bcrypt.hash(req.body.password,10,(err,hash)=>{
+                                    user.password=hash;
+
+                                    user.save((err,user)=>{
+                                        if (err) {
+                                            return res.send(err)
+                                        }
+                                        res.send('Password changed successfully ')
+                                    })
+                                })
+                           // })
+                        }else{
+                            res.send('Password did not match')
+                        }
+                    }
+                })
+        }
+    ])
+}
+
+
+// implementing socket.io
+//Creating a chatroom
+
+exports.createchatroom=(server,redisClient)=>{
+    try {
+        if (!server.app) {
+            server.app = {}
+        }
+        server.app.socketConnections = {};
+        const io = require('socket.io')(server);
+
+        const botName = 'Chat-App';
+                
+        // Run when client connects
+        io.on('connection', socket => {
+            socket.on('joinRoom', ({ username, room }) => {
+            const user = userJoin(socket.id, username, room);
+        
+            socket.join(user.room);
+        
+            // Welcome current user
+            socket.emit('message', formatMessage(botName, 'Welcome to ChatApp!'));
+        
+            // Broadcast when a user connects
+            socket.broadcast
+                .to(user.room)
+                .emit(
+                'message',
+                formatMessage(botName, `${user.username} has joined the chat`)
+                );
+        
+            // Send users and room info
+            io.to(user.room).emit('roomUsers', {
+                room: user.room,
+                users: getRoomUsers(user.room)
+            });
+            });
+        
+            // Listen for chatMessage
+            socket.on('chatMessage', msg => {
+            const user = getCurrentUser(socket.id);
+        
+            io.to(user.room).emit('message', formatMessage(user.username, msg));
+            });
+        
+            // Runs when client disconnects
+            socket.on('disconnect', () => {
+            const user = userLeave(socket.id);
+        
+            if (user) {
+                io.to(user.room).emit(
+                'message',
+                formatMessage(botName, `${user.username} has left the chat`)
+                );
+        
+                // Send users and room info
+                io.to(user.room).emit('roomUsers', {
+                room: user.room,
+                users: getRoomUsers(user.room)
+                });
+            }
+            });
+        });
+
+
+    }catch (err) {
+        console.log(err);
+        console.log(err.code);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//checking authentication
+
+function checkAuthenticate(req,res,next) {
+    if(req.isAuthenticated()){
+        return next()
+    }else{
+        return res.redirect('/login')
+    }
+}
+
+
+function checkNotAuthenticate(req,res,next) {
+    if(req.isAuthenticated()){
+        return res.redirect('/')
+    }else{
+        return next()
+    }
 }

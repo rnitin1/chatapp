@@ -29,7 +29,16 @@
             "post":{
                 "x-swagger-router-controller":"middleware-name1",
                 "opertionid":"signup",
-                "parameters":[{
+                "parameters":[
+                    {
+                        "in":"formData",
+                        "name":"token",
+                        "required":"true",
+                        "description":"Enter OTP",
+                        "type":"string",
+                        "value":""
+                    },
+                    {
                     "in":"formData",
                     "name":"email",
                     "required":"true",
@@ -41,7 +50,7 @@
                     "in":"formData",
                     "name":"name",
                     "required":"true",
-                    "description":"Enter email",
+                    "description":"Enter Name",
                     "type":"string",
                     "value":""
                 },
@@ -49,7 +58,7 @@
                     "in":"formData",
                     "name":"password",
                     "required":"true",
-                    "description":"Enter email",
+                    "description":"Enter password",
                     "type":"string",
                     "value":""
                 },
@@ -57,15 +66,15 @@
                     "in":"formData",
                     "name":"phoneNumber",
                     "required":"true",
-                    "description":"Enter email",
+                    "description":"Enter P.No",
                     "type":"string",
                     "value":""
                 },
+               
                 {
                     "in":"formData",
                     "name":"age",
                     "required":"true",
-                    "description":"Enter email",
                     "type":"string",
                     "value":""
                 }
@@ -85,6 +94,117 @@
                     "type":"string",
                     "value":""
                 }],
+                "responses":{}
+            }
+        },
+        "/login":{
+            "post":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"login",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"email",
+                    "required":"true",
+                    "description":"Enter email",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"password",
+                    "required":"true",
+                    "description":"Enter password",
+                    "type":"string",
+                    "value":""
+                }
+            ],
+                "responses":{}
+            }
+        },
+        "/logout":{
+            "delete":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"logout",
+                
+                "responses":{}
+            }
+        },
+        "/changepassword":{
+            "put":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"changepassword",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"password",
+                    "required":"true",
+                    "description":"Enter old password",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"newpassword",
+                    "required":"true",
+                    "description":"Enter new password",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"confirmpassword",
+                    "required":"true",
+                    "description":"Enter confirm password",
+                    "type":"string",
+                    "value":""
+                }
+            ],
+                "responses":{}
+            }
+        },
+        "/resetpasswordtoken":{
+            "post":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"resetpasswordtoken",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"email",
+                    "required":"true",
+                    "description":"Enter email",
+                    "type":"string",
+                    "value":""
+                }],
+                "responses":{}
+            }
+        },
+        "/resetpassword":{
+            "post":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"resetpassword",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"token",
+                    "required":"true",
+                    "description":"Enter OTP",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"password",
+                    "required":"true",
+                    "description":"Enter new password",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"confirmpassword",
+                    "required":"true",
+                    "description":"Enter confirm password",
+                    "type":"string",
+                    "value":""
+                }
+            ],
                 "responses":{}
             }
         }
