@@ -144,7 +144,6 @@ exports.login= (checkNotAuthenticate,(req,res)=>{
     
  })
 
-
  //logout
  exports.logout=(req,res)=>{
     req.logOut();
