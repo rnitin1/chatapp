@@ -36,10 +36,9 @@ initializePassport(passport)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(passport.initialize());
 app.use(passport.session());
-//app.use(methodOverride('_method'))
 app.use(express.urlencoded({extended:false}));
 app.use(session({
-    secret:'secret',
+    secret:process.env.SESSION_SESSION,
     resave:false,
     saveUninitialized:false,
 }))

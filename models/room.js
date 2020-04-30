@@ -8,7 +8,8 @@ const Room = new Schema({
         trim:true,
         default:null
     },
-    users: {ref:"User"}
+    users: {type:Array,
+            ref:"User"}
     
 })
 

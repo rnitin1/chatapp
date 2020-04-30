@@ -5,7 +5,9 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const nodemailer= require('nodemailer')
 const async = require('async');
-const EmailVer = require('../models/emailVerification')
+const EmailVer = require('../models/emailVerification');
+const Room = require('../models/room');
+const randomstring=require('randomstring')
 
 
 // Registering the user
@@ -32,6 +34,7 @@ exports.signup = (req,res)=>{
 
             // saving data in the data base
             try {
+
                 const hashPassword =await bcrypt.hash(req.body.password,10)
                 const user = new User({
                     _id:new mongoose.Types.ObjectId,
@@ -40,6 +43,7 @@ exports.signup = (req,res)=>{
                     password:hashPassword,
                     phoneNumber:req.body.phoneNumber,
                     age:req.body.age,
+                    accessToken:randomstring.generate(150)
                                
                 })
                 const saveData=user.save()
@@ -139,10 +143,17 @@ exports.emailverification = (req,res)=>{
 }
 
 //login
-exports.login= (checkNotAuthenticate,(req,res)=>{
-    res.send(`Welcome `)
-    
- })
+exports.login= async (req,res)=>{   
+   let token = await randomstring.generate(150);
+   let dataToSet = {
+       $set: {
+           accessToken: token
+       }
+   }
+   await User.update(dataToSet);
+   res.send(`Welcome `)
+
+ }
 
  //logout
  exports.logout=(req,res)=>{
@@ -302,77 +313,119 @@ exports.resetpassword = (req,res)=>{
 }
 
 
-// implementing socket.io
+
 //Creating a chatroom
 
-exports.createchatroom=(server,redisClient)=>{
-    try {
-        if (!server.app) {
-            server.app = {}
-        }
-        server.app.socketConnections = {};
-        const io = require('socket.io')(server);
-
-        const botName = 'Chat-App';
-                
-        // Run when client connects
-        io.on('connection', socket => {
-            socket.on('joinRoom', ({ username, room }) => {
-            const user = userJoin(socket.id, username, room);
-        
-            socket.join(user.room);
-        
-            // Welcome current user
-            socket.emit('message', formatMessage(botName, 'Welcome to ChatApp!'));
-        
-            // Broadcast when a user connects
-            socket.broadcast
-                .to(user.room)
-                .emit(
-                'message',
-                formatMessage(botName, `${user.username} has joined the chat`)
-                );
-        
-            // Send users and room info
-            io.to(user.room).emit('roomUsers', {
-                room: user.room,
-                users: getRoomUsers(user.room)
-            });
-            });
-        
-            // Listen for chatMessage
-            socket.on('chatMessage', msg => {
-            const user = getCurrentUser(socket.id);
-        
-            io.to(user.room).emit('message', formatMessage(user.username, msg));
-            });
-        
-            // Runs when client disconnects
-            socket.on('disconnect', () => {
-            const user = userLeave(socket.id);
-        
-            if (user) {
-                io.to(user.room).emit(
-                'message',
-                formatMessage(botName, `${user.username} has left the chat`)
-                );
-        
-                // Send users and room info
-                io.to(user.room).emit('roomUsers', {
-                room: user.room,
-                users: getRoomUsers(user.room)
-                });
+exports.createchatroom=(req,res)=>{
+    //checking whether chat room already exists or not 
+    Room.findOne({name:req.body.name},(err,room)=>{
+        if (err) {
+            return res.send(err);
+        }if (!room) {
+             //validation schema
+            const validateData = (user)=>{
+            const schema = {
+                 name:joi.string().trim().min(3)
+                }
+            return joi.validate(user,schema);
             }
-            });
-        });
-
-
-    }catch (err) {
-        console.log(err);
-        console.log(err.code);
-    }
+            let {error} = validateData(req.body) // equals to result.error or object destructuring
+            if(error ) return res.status(404).send(error.details[0].message);
+            console.log(req.body);
+            
+            //saving chatroom in the data base 
+            try {
+                const room = new Room({
+                    name: req.body.name,
+                    })
+                const saveData=room.save()
+                                .then(result=>console.log(result))
+                                .catch(err=>console.log(err))                
+                            
+            } catch (error) {
+                res.send(error)
+            }
+ 
+        }else{
+            res.send('Chatroom With this name already exists')
+        }
+    })
 }
 
+//Invite User
+//chatroom list
+//Implementing socket.io
+// chatroom messages
+//notification to non active users 
+//delete chatroom
+
+// exports.socketchat=(server,redisClient)=>{
+//     try {
+//         if (!server.app) {
+//             server.app = {}
+//         }
+//         server.app.socketConnections = {};
+//         const io = require('socket.io')(server);
+
+//         const botName = 'Chat-App';
+                
+//         // Run when client connects
+//         io.on('connection', socket => {
+//             socket.on('joinRoom', ({ username, room }) => {
+//             const user = userJoin(socket.id, username, room);
+        
+//             socket.join(user.room);
+        
+//             // Welcome current user
+//             socket.emit('message', formatMessage(botName, 'Welcome to ChatApp!'));
+        
+//             // Broadcast when a user connects
+//             socket.broadcast
+//                 .to(user.room)
+//                 .emit(
+//                 'message',
+//                 formatMessage(botName, `${user.username} has joined the chat`)
+//                 );
+        
+//             // Send users and room info
+//             io.to(user.room).emit('roomUsers', {
+//                 room: user.room,
+//                 users: getRoomUsers(user.room)
+//             });
+//             });
+        
+//             // Listen for chatMessage
+//             socket.on('chatMessage', msg => {
+//             const user = getCurrentUser(socket.id);
+        
+//             io.to(user.room).emit('message', formatMessage(user.username, msg));
+//             });
+        
+//             // Runs when client disconnects
+//             socket.on('disconnect', () => {
+//             const user = userLeave(socket.id);
+        
+//             if (user) {
+//                 io.to(user.room).emit(
+//                 'message',
+//                 formatMessage(botName, `${user.username} has left the chat`)
+//                 );
+        
+//                 // Send users and room info
+//                 io.to(user.room).emit('roomUsers', {
+//                 room: user.room,
+//                 users: getRoomUsers(user.room)
+//                 });
+//             }
+//             });
+//         });
+
+
+//     }catch (err) {
+//         console.log(err);
+//         console.log(err.code);
+//     }
+// }
 
 
 
@@ -397,21 +450,4 @@ exports.createchatroom=(server,redisClient)=>{
 
 
 
-//checking authentication
 
-function checkAuthenticate(req,res,next) {
-    if(req.isAuthenticated()){
-        return next()
-    }else{
-        return res.redirect('/login')
-    }
-}
-
-
-function checkNotAuthenticate(req,res,next) {
-    if(req.isAuthenticated()){
-        return res.redirect('/')
-    }else{
-        return next()
-    }
-}
