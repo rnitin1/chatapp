@@ -25,24 +25,30 @@ mongoose.connect("mongodb://localhost/chat-app"
 )
 
 //passport initialization
-initializePassport(passport)
+// initializePassport(passport)
+initializePassport(
+    passport,
+    email=> User.findOne({email:email
+    })
+    //id=>user.find(user =>user.id===id)
+    )
 
 
-// app.set('views',path.join(__dirname,'views'))
-// app.set('view engine','ejs')
+app.set('views',path.join(__dirname,'views'))
+app.set('view engine','ejs')
 
 
 //middlewares
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(passport.initialize());
-app.use(passport.session());
+// app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(express.urlencoded({extended:false}));
 app.use(session({
     secret:process.env.SESSION_SESSION,
     resave:false,
     saveUninitialized:false,
 }))
-
+app.use(passport.initialize());
+app.use(passport.session());
 app.use('/',user);
 
 const port = process.env.PORT || 5000 ;

@@ -156,9 +156,22 @@ exports.login= async (req,res)=>{
  }
 
  //logout
- exports.logout=(req,res)=>{
-    req.logOut();
-    return res.send('Logged out')
+ exports.logout=async (req,res)=>{
+    try{
+        // Updating access token to null
+        let dataToSet = {
+            $set: {
+                accessToken: ""
+            }
+        }
+        await User.update(dataToSet);
+
+        req.logOut();
+        return res.send('Logged out')
+
+    }catch(err){
+        res.send(err)
+    }
 }
 
  //changepassword 
@@ -351,6 +364,69 @@ exports.createchatroom=(req,res)=>{
         }
     })
 }
+
+//Editing User profile 
+exports.edituserprofile=async (req,res)=>{
+    try {
+        let dataToSet={};
+        //storing name in dataToSet variable
+        if(req.body.name){
+            dataToSet.name=req.body.name
+        }
+        //storing P.no in dataToSet variable
+        if(req.body.phoneNumber){
+            dataToSet.phoneNumber=req.body.phoneNumber
+        }
+        //storing age in dataToSet variable
+        if(req.body.age){
+            dataToSet.age=req.body.age
+        }
+        //storing profile pic in dataToSet variable
+        if(req.body.image){
+            dataToSet.image=req.body.image
+        }
+        //Udating the user in the database
+        await User.update({ $set: dataToSet });
+
+        res.send(dataToSet)
+
+    } catch (err) {
+        res.send(err)
+    }
+}
+
+//searching User
+exports.searchuser=async (req,res)=>{
+    try {
+        //validation schema
+       const validateData = (user)=>{
+       const schema = {
+            name:joi.string().trim().min(3).required()
+           }
+       return joi.validate(user,schema);
+       }
+       let {error} = validateData(req.body) // equals to result.error or object destructuring
+       if(error ) return res.status(404).send(error.details[0].message);
+       console.log(req.body);
+       // finding the user by name 
+        User.findOne({name:req.body.name},(err,user)=>{
+            if(err){
+                return res.send(err)
+            }else{
+                //sending users profile
+                res.send(user)
+            }
+        })
+    } catch (err) {
+        res.send(err)
+    }
+}
+
+
+
+
+
+
 
 //Invite User
 //chatroom list
