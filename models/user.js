@@ -4,7 +4,7 @@ const User = new Schema ({
         name:{
             type:String,
             trim:true,
-            default:null
+            default:null                                                        
         },
         email:{
             type:String,
@@ -22,6 +22,11 @@ const User = new Schema ({
             type:Number,
             trim:true,
             default:null
+        },
+        rooms:{
+            type:String, 
+            trim:true,
+            default:null 
         },
         
         

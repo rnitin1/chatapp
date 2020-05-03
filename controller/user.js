@@ -331,7 +331,7 @@ exports.resetpassword = (req,res)=>{
 
 exports.createchatroom=(req,res)=>{
     //checking whether chat room already exists or not 
-    Room.findOne({name:req.body.name},(err,room)=>{
+    User.findOne({rooms:req.body.name},(err,room)=>{
         if (err) {
             return res.send(err);
         }if (!room) {
@@ -348,13 +348,19 @@ exports.createchatroom=(req,res)=>{
             
             //saving chatroom in the data base 
             try {
-                const room = new Room({
-                    name: req.body.name,
-                    })
-                const saveData=room.save()
-                                .then(result=>console.log(result))
-                                .catch(err=>console.log(err))                
-                            
+                // const room = new Room({
+                //     name: req.body.name,
+                //     })
+                // const saveData=room.save()
+                //                 .then(result=>console.log(result))
+                //                 .catch(err=>console.log(err))                
+                let dataToSet = {
+                    $set: {
+                        rooms: req.body.name
+                    }
+                } 
+                User.update(dataToSet)
+                res.send(`Successfully created ${req.body.name}`)    
             } catch (error) {
                 res.send(error)
             }
@@ -409,12 +415,12 @@ exports.searchuser=async (req,res)=>{
        if(error ) return res.status(404).send(error.details[0].message);
        console.log(req.body);
        // finding the user by name 
-        User.findOne({name:req.body.name},(err,user)=>{
+        User.findOne({name:req.body.name},{password:0,deviceToken:0,accessToken:0,_id:0,__v:0},(err,user)=>{
             if(err){
                 return res.send(err)
             }else{
                 //sending users profile
-                res.send(user)
+                return res.send(user)
             }
         })
     } catch (err) {
@@ -423,8 +429,38 @@ exports.searchuser=async (req,res)=>{
 }
 
 
+//Accessing user created and invited chatroom
+exports.accesschatrooms=async (req,res)=>{
+    try {
+        console.log(req.user);
+        if (req.user) {
+            res.send('hello')
+        } else {
+            
+        }
+        
+        
+    } catch (error) {
+        res.send(error)
+    }
+}
 
-
+//delete chatroom
+exports.deletechatroom= async (req,res)=>{
+    try {
+        if(req.user){
+           await Room.deleteOne({name:req.body.name},(err,result)=>{
+               if (err) {
+                  return res.send(err)
+               } else {
+                   res.send(result)
+               }
+           })
+        }
+    } catch (error) {
+        res.send(error)
+    }
+}
 
 
 
@@ -433,7 +469,8 @@ exports.searchuser=async (req,res)=>{
 //Implementing socket.io
 // chatroom messages
 //notification to non active users 
-//delete chatroom
+//------------sending notification
+
 
 // exports.socketchat=(server,redisClient)=>{
 //     try {

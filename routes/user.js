@@ -15,16 +15,15 @@ router.post('/resetpassword',user.resetpassword);//-------------done
 router.put('/changepassword',checkAuthenticate,user.changepassword);//-----------done
 router.delete('/logout',checkAuthenticate,user.logout);//---------------done
 router.post('/uploadimage',checkAuthenticate,upload.uploadimage);//-----done
-router.post('/createchatroom',checkAuthenticate,user.createchatroom);
+router.put('/createchatroom',checkAuthenticate,user.createchatroom);
 // router.get('/getuserprofile',user.getuserprofile)
 router.post('/searchuser',checkAuthenticate,user.searchuser)
 // router.post('/inviteuser',user.inviteuser);
-// router.delete('/deletechatroom',user.deletechatroom);
-// router.get('/accesschatrooms',user.accesschatrooms);
+router.delete('/deletechatroom',checkAuthenticate,user.deletechatroom);
+router.get('/accesschatrooms',checkAuthenticate,user.accesschatrooms);
 router.put('/edituserprofile',checkAuthenticate, user.edituserprofile);//-----done
 // router.post('/newmassege',user.newmessage);
 // router.get('/chatmessages',user.chatmessages);
-router.get('/renderuploadimage', checkAuthenticate,upload.renderimage)//------done
 
 
 

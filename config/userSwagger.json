@@ -91,7 +91,7 @@
                     "name":"image",
                     "required":"true",
                     "description":"Select image",
-                    "type":"string",
+                    "type":"file",
                     "value":""
                 }],
                 "responses":{}
@@ -209,7 +209,7 @@
             }
         },
         "/createchatroom":{
-            "post":{
+            "put":{
                 "x-swagger-router-controller":"middleware-name1",
                 "opertionid":"resetpasswordtoken",
                 "parameters":[{
@@ -253,7 +253,7 @@
                     "in":"formData",
                     "name":"image",
                     "description":"Select image",
-                    "type":"string",
+                    "type":"file",
                     "value":""
                 }
             ],
@@ -269,6 +269,28 @@
                     "name":"name",
                     "required":"true",
                     "description":"Enter User name ",
+                    "type":"string",
+                    "value":""
+                }],
+                "responses":{}
+            }
+        },
+        "/accesschatrooms":{
+            "get":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"Access chat rooms ",
+                "responses":{}
+            }
+        },
+        "/deletechatroom":{
+            "delete":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"search user",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"name",
+                    "required":"true",
+                    "description":"Enter room name ",
                     "type":"string",
                     "value":""
                 }],
