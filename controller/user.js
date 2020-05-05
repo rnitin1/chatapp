@@ -150,9 +150,9 @@ exports.login= async (req,res)=>{
            accessToken: token
        }
    }
-   await User.update(dataToSet);
+   await User.update({email:req.body.email},dataToSet);
    res.send(`Welcome `)
-
+   
  }
 
  //logout
@@ -164,8 +164,9 @@ exports.login= async (req,res)=>{
                 accessToken: ""
             }
         }
-        await User.update(dataToSet);
-
+        await User.update({},dataToSet);
+        console.log(req.header);
+        
         req.logOut();
         return res.send('Logged out')
 
@@ -329,42 +330,46 @@ exports.resetpassword = (req,res)=>{
 
 //Creating a chatroom
 
-exports.createchatroom=(req,res)=>{
+exports.createchatroom=async (req,res)=>{
     //checking whether chat room already exists or not 
-    User.findOne({rooms:req.body.name},(err,room)=>{
+    User.findOne( {rooms:req.body.name},async (err,room)=>{
         if (err) {
             return res.send(err);
         }if (!room) {
-             //validation schema
-            const validateData = (user)=>{
-            const schema = {
-                 name:joi.string().trim().min(3)
-                }
-            return joi.validate(user,schema);
-            }
-            let {error} = validateData(req.body) // equals to result.error or object destructuring
-            if(error ) return res.status(404).send(error.details[0].message);
-            console.log(req.body);
-            
-            //saving chatroom in the data base 
-            try {
-                // const room = new Room({
-                //     name: req.body.name,
-                //     })
-                // const saveData=room.save()
-                //                 .then(result=>console.log(result))
-                //                 .catch(err=>console.log(err))                
-                let dataToSet = {
-                    $set: {
-                        rooms: req.body.name
+            if (req.user._id) {
+                //validation schema
+                const validateData = (user)=>{
+                const schema = {
+                    name:joi.string().trim().min(3)
                     }
-                } 
-                User.update(dataToSet)
-                res.send(`Successfully created ${req.body.name}`)    
-            } catch (error) {
-                res.send(error)
-            }
- 
+                return joi.validate(user,schema);
+                }
+                let {error} = validateData(req.body) // equals to result.error or object destructuring
+                if(error ) return res.status(404).send(error.details[0].message);
+                console.log(req.body);
+                
+                //saving chatroom in the data base 
+                try {
+                    // const room = new Room({
+                    //     name: req.body.name,
+                    //     })
+                    // const saveData=room.save()
+                    //                 .then(result=>console.log(result))
+                    //                 .catch(err=>console.log(err))      
+                    console.log('efee',req.body);
+                    
+                    let dataToSet = {
+                        $push: {
+                            rooms: req.body.name
+                        }
+                    } 
+                    await User.update( {_id:req.user._id},dataToSet)
+                    // await User.findOne({_id:req.user._id})
+                    res.send(`Successfully created ${req.body.name}`)    
+                } catch (error) {
+                    res.send(error)
+                }
+        }
         }else{
             res.send('Chatroom With this name already exists')
         }
@@ -374,6 +379,7 @@ exports.createchatroom=(req,res)=>{
 //Editing User profile 
 exports.edituserprofile=async (req,res)=>{
     try {
+        
         let dataToSet={};
         //storing name in dataToSet variable
         if(req.body.name){
@@ -448,12 +454,26 @@ exports.accesschatrooms=async (req,res)=>{
 //delete chatroom
 exports.deletechatroom= async (req,res)=>{
     try {
-        if(req.user){
-           await Room.deleteOne({name:req.body.name},(err,result)=>{
+        if(req.user._id){
+           await User.finfOne({rooms:req.body.name},async (err,room)=>{
                if (err) {
                   return res.send(err)
+               }if (!room) {
+                   res.send('No room with this Name')
                } else {
-                   res.send(result)
+                   try {
+                    console.log('efee',req.body);
+
+                       let dataToSet={
+                           $pop:{
+                               rooms:req.body.name
+                           }
+                       }
+                       await User.update({_id:req.user._id},dataToSet)
+                       res.send(`${req.body.name} deleted`)
+                   } catch (error) {
+                       res.send(error)
+                   }
                }
            })
         }

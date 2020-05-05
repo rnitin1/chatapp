@@ -283,9 +283,9 @@
             }
         },
         "/deletechatroom":{
-            "delete":{
+            "put":{
                 "x-swagger-router-controller":"middleware-name1",
-                "opertionid":"search user",
+                "opertionid":"delete chat room",
                 "parameters":[{
                     "in":"formData",
                     "name":"name",

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const User = new Schema ({
+        _id:mongoose.Schema.Types.ObjectId,
         name:{
             type:String,
             trim:true,
@@ -24,9 +25,8 @@ const User = new Schema ({
             default:null
         },
         rooms:{
-            type:String, 
-            trim:true,
-            default:null 
+            type:Array, 
+            default:"" 
         },
         
         

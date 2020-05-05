@@ -19,7 +19,7 @@ router.put('/createchatroom',checkAuthenticate,user.createchatroom);
 // router.get('/getuserprofile',user.getuserprofile)
 router.post('/searchuser',checkAuthenticate,user.searchuser)
 // router.post('/inviteuser',user.inviteuser);
-router.delete('/deletechatroom',checkAuthenticate,user.deletechatroom);
+router.put('/deletechatroom',checkAuthenticate,user.deletechatroom);
 router.get('/accesschatrooms',checkAuthenticate,user.accesschatrooms);
 router.put('/edituserprofile',checkAuthenticate, user.edituserprofile);//-----done
 // router.post('/newmassege',user.newmessage);
@@ -39,7 +39,7 @@ function checkAuthenticate(req,res,next) {
 
 function checkNotAuthenticate(req,res,next) {
     if(req.isAuthenticated()){
-        return res.send('login first')
+        return res.send('logout first')
     }else{
         return next()
     }
