@@ -82,21 +82,6 @@
                 "responses":{}
             }
         },
-        "/uploadimage":{
-            "post":{
-                "x-swagger-router-controller":"middleware-name1",
-                "opertionid":"upload image",
-                "parameters":[{
-                    "in":"formData",
-                    "name":"image",
-                    "required":"true",
-                    "description":"Select image",
-                    "type":"file",
-                    "value":""
-                }],
-                "responses":{}
-            }
-        },
         "/login":{
             "post":{
                 "x-swagger-router-controller":"middleware-name1",
@@ -208,6 +193,21 @@
                 "responses":{}
             }
         },
+        "/uploadimage":{
+            "post":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"upload image",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"image",
+                    "required":"true",
+                    "description":"Select image",
+                    "type":"file",
+                    "value":""
+                }],
+                "responses":{}
+            }
+        },
         "/createchatroom":{
             "put":{
                 "x-swagger-router-controller":"middleware-name1",
@@ -220,6 +220,30 @@
                     "type":"string",
                     "value":""
                 }],
+                "responses":{}
+            }
+        },
+        "/addusers":{
+            "put":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"resetpasswordtoken",
+                "parameters":[{
+                    "in":"formData",
+                    "name":"name",
+                    "required":"true",
+                    "description":"Enter Room name ",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"user",
+                    "required":"true",
+                    "description":"Enter user name ",
+                    "type":"string",
+                    "value":""
+                }
+            ],
                 "responses":{}
             }
         },
@@ -253,7 +277,7 @@
                     "in":"formData",
                     "name":"image",
                     "description":"Select image",
-                    "type":"file",
+                    "type":"string",
                     "value":""
                 }
             ],

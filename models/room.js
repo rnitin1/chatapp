@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+let roomData = {
+    userId: { type: Schema.Types.ObjectId,default:"" ,ref: "User" },
+    name: { type: String },
+    users: { type: String,default:"" },
+    adminId:{type:Schema.Types.ObjectId,default:"", ref:"user"}
+};
+
+
 const Room = new Schema({
-    name:{
-        type:String,
-        required:true,
-        trim:true,
-        default:null
-    },
-    users: {type:Array,
-            ref:"User"}
-    
+    room:[roomData]
 })
 
-module.exports=mongoose.model('Room',Room)
+module.exports = mongoose.model('Room', Room)

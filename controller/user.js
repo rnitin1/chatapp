@@ -164,7 +164,7 @@ exports.login= async (req,res)=>{
                 accessToken: ""
             }
         }
-        await User.update({},dataToSet);
+        await User.update({_id:req.user._id},dataToSet);
         console.log(req.header);
         
         req.logOut();
@@ -326,58 +326,9 @@ exports.resetpassword = (req,res)=>{
     ])
 }
 
-
-
-//Creating a chatroom
-
-exports.createchatroom=async (req,res)=>{
-    //checking whether chat room already exists or not 
-    User.findOne( {rooms:req.body.name},async (err,room)=>{
-        if (err) {
-            return res.send(err);
-        }if (!room) {
-            if (req.user._id) {
-                //validation schema
-                const validateData = (user)=>{
-                const schema = {
-                    name:joi.string().trim().min(3)
-                    }
-                return joi.validate(user,schema);
-                }
-                let {error} = validateData(req.body) // equals to result.error or object destructuring
-                if(error ) return res.status(404).send(error.details[0].message);
-                console.log(req.body);
-                
-                //saving chatroom in the data base 
-                try {
-                    // const room = new Room({
-                    //     name: req.body.name,
-                    //     })
-                    // const saveData=room.save()
-                    //                 .then(result=>console.log(result))
-                    //                 .catch(err=>console.log(err))      
-                    console.log('efee',req.body);
-                    
-                    let dataToSet = {
-                        $push: {
-                            rooms: req.body.name
-                        }
-                    } 
-                    await User.update( {_id:req.user._id},dataToSet)
-                    // await User.findOne({_id:req.user._id})
-                    res.send(`Successfully created ${req.body.name}`)    
-                } catch (error) {
-                    res.send(error)
-                }
-        }
-        }else{
-            res.send('Chatroom With this name already exists')
-        }
-    })
-}
-
 //Editing User profile 
 exports.edituserprofile=async (req,res)=>{
+    console.log(req.body);
     try {
         
         let dataToSet={};
@@ -398,7 +349,7 @@ exports.edituserprofile=async (req,res)=>{
             dataToSet.image=req.body.image
         }
         //Udating the user in the database
-        await User.update({ $set: dataToSet });
+        await User.update({_id:req.user._id}, { $set: dataToSet });
 
         res.send(dataToSet)
 
@@ -435,6 +386,106 @@ exports.searchuser=async (req,res)=>{
 }
 
 
+
+//Creating a chatroom
+
+exports.createchatroom=async (req,res)=>{
+    // //checking whether chat room already exists or not 
+    // User.findOne( {rooms:req.body.name},async (err,room)=>{
+    //     if (err) {
+    //         return res.send(err);
+    //     }if (!room) {
+    //         if (req.user._id) {
+    //             //validation schema
+    //             const validateData = (user)=>{
+    //             const schema = {
+    //                 name:joi.string().trim().min(3)
+    //                 }
+    //             return joi.validate(user,schema);
+    //             }
+    //             let {error} = validateData(req.body) // equals to result.error or object destructuring
+    //             if(error ) return res.status(404).send(error.details[0].message);
+    //             console.log(req.body);
+                
+    //             //saving chatroom in the data base 
+    //             try {
+    //                 // const room = new Room({
+    //                 //     name: req.body.name,
+    //                 //     })
+    //                 // const saveData=room.save()
+    //                 //                 .then(result=>console.log(result))
+    //                 //                 .catch(err=>console.log(err))      
+    //                 console.log('efee',req.body);
+                    
+    //                 let dataToSet = {
+    //                     $push: {
+    //                         rooms: req.body.name
+    //                     }
+    //                 } 
+    //                 await User.update( {_id:req.user._id},dataToSet)
+    //                 // await User.findOne({_id:req.user._id})
+    //                 res.send(`Successfully created ${req.body.name}`)    
+    //             } catch (error) {
+    //                 res.send(error)
+    //             }
+    //     }
+    //     }else{
+    //         res.send('Chatroom With this name already exists')
+    //     }
+    // })
+    try {
+        if(req.user._id){
+            await User.findOne({_id:req.user._id},async (err,user)=>{
+                if (err) {
+                    res.send(err)
+                } if(!user) {
+                    res.send('login first')
+                }else{
+                    //validation schema
+                    const validateData = (user)=>{
+                        const schema = {
+                            name:joi.string().trim().min(3)
+                        }
+                    return joi.validate(user,schema);
+                    }
+                    let {error} = validateData(req.body) // equals to result.error or object destructuring
+                    if(error ) return res.status(404).send(error.details[0].message);
+                    console.log(req.body);
+                                    
+                    await Room.findOne({name:req.body.name},async (err,room)=>{
+                        if(err){
+                            res.send(err)
+                        }if(room){
+                            res.send('Room with this name is already exists')
+                        }else{
+                           try {
+                              const room = new Room({
+                                //   name:req.body.name,
+                                //   adminId:req.user._id
+                                "roomData.$.name": req.body.name
+                              }) 
+                              await room.save()
+                                        .then(result=>console.log(result))
+                                        .catch(err=>console.log(err));
+
+
+                              res.send(`${req.body.name} created`)
+                           } catch (error) {
+                               res.send(error)
+                           }
+                        }
+                    })
+                }
+            })
+        }
+    } catch (err) {
+        res.send(err)
+    }
+
+}
+
+
+
 //Accessing user created and invited chatroom
 exports.accesschatrooms=async (req,res)=>{
     try {
@@ -453,38 +504,148 @@ exports.accesschatrooms=async (req,res)=>{
 
 //delete chatroom
 exports.deletechatroom= async (req,res)=>{
-    try {
-        if(req.user._id){
-           await User.finfOne({rooms:req.body.name},async (err,room)=>{
-               if (err) {
-                  return res.send(err)
-               }if (!room) {
-                   res.send('No room with this Name')
-               } else {
-                   try {
-                    console.log('efee',req.body);
+    // try {
+    //     console.log('eeeefee',req.user._id);
 
-                       let dataToSet={
-                           $pop:{
-                               rooms:req.body.name
-                           }
-                       }
-                       await User.update({_id:req.user._id},dataToSet)
-                       res.send(`${req.body.name} deleted`)
-                   } catch (error) {
-                       res.send(error)
-                   }
-               }
-           })
+    //     if(req.user._id){
+    //         console.log('gyjgugjnkjbkjbbjk');
+            
+    //        await User.finfOne({rooms:req.body.name},async (err,room)=>{
+    //            if (err) {
+    //                console.log('fyugfuyuygug',err);
+    //                console.log('fvufyug',room);
+                   
+                   
+    //               return res.send(err)
+    //            }if (!room) {
+    //                res.send('No room with this Name')
+    //            } else {
+    //                try {
+    //                 console.log('efee',req.body);
+
+    //                    let dataToSet={
+    //                        $pop:{
+    //                            rooms:req.body.name
+    //                        }
+    //                    }
+    //                    await User.update({_id:req.user._id},dataToSet)
+    //                    res.send(`${req.body.name} deleted`)
+    //                } catch (error) {
+    //                    res.send(error)
+    //                }
+    //            }
+    //        })
+    //     }
+    // } catch (error) {
+    //     res.send(error)
+    // }
+    try {
+        //checking whether logged in or not
+        if (req.user._id) {
+            //comparing user's id with storage 
+            await User.findOne({_id:req.user_id},(err,user)=>{
+                if (err) {
+                    res.send(err)
+                } if (user) {
+                    //further checking rooms in db
+                    User.findOne({rooms:req.body.name},async (err,room)=>{
+                        if (err) {
+                            res.send(err)
+                        } if (!room) {
+                            res.send('No room with this Name')
+                        }else{
+                            // variable for poping up the room
+                            const dataToSet = {
+                                $pop :{
+                                    rooms:req.body.name
+                                }
+                            }
+                            // checking criteria
+                            const criteria = {
+                                _id:req.user._id
+                            }
+                            console.log('biucbod',criteria);
+                            console.log('bnonfiowjenfro',dataToSet);
+                            
+                            
+                            //updating the database
+                                await User.update(criteria,dataToSet)
+                            res.send(`${req.body.name} has been deleted`)
+                        }
+                    })
+                }if(!user){
+                    res.send('Unauthorized')
+                }
+            })
+        } else {
+            res.send('log in first')
+        }
+        
+    } catch (error) {
+        res.send(error)
+    }
+}
+
+//addusers
+exports.addusers= async (req,res)=>{
+    try {
+        if (req.user._id) {
+            await User.findOne({_id:req.user._id},async (err,user)=>{
+                if (err) {
+                    res.send(err)
+                }if (!user) {
+                    res.send('unauthorized')
+                }else{
+                    //validation schema
+                    const validateData = (user)=>{
+                        const schema = {
+                            user:joi.string().trim().min(3),
+                            name:joi.string().trim().min(3)
+                            }
+                            return joi.validate(user,schema);
+                            }
+                    let {error} = validateData(req.body) // equals to result.error or object destructuring
+                    if(error ) return res.status(404).send(error.details[0].message);
+                    console.log(req.body);
+
+                    await Room.findOne({name:req.body.name},async (err,room)=>{
+                        if(err){
+                            res.send(err)
+                        }if(!room){
+                            res.send('No room with this name ')
+                        }else{
+                            try {
+                                let dataToSet={
+                                    $push:{
+                                        users:req.body.user
+                                    }
+                                }
+                                let criteria={
+                                    rooms:req.body.name
+                                }
+                                await Room.update(criteria,dataToSet)
+                                res.send(`${req.body.user} is added in the Room ${req.body.name}`)
+                            } catch (error) {
+                                res.send(error)
+                            }
+                        }
+                    })
+                }
+            })
+        } else {
+            res.send('Unauthorised or login in first')
         }
     } catch (error) {
         res.send(error)
     }
 }
 
-
-
 //Invite User
+exports.inviteuser= async (req,res)=>{
+    
+}
+
+
 //chatroom list
 //Implementing socket.io
 // chatroom messages
