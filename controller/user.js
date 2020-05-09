@@ -150,6 +150,7 @@ exports.login= async (req,res)=>{
            accessToken: token
        }
    }
+//    console.log('==============',req.user)
    await User.update({email:req.body.email},dataToSet);
    res.send(`Welcome `)
    
@@ -434,10 +435,12 @@ exports.createchatroom=async (req,res)=>{
     //     }
     // })
     try {
+        //Checking authorization
         if(req.user._id){
+            //Checking whether id exists or not
             await User.findOne({_id:req.user._id},async (err,user)=>{
                 if (err) {
-                    res.send(err)
+                    return res.send(err)
                 } if(!user) {
                     res.send('login first')
                 }else{
@@ -451,27 +454,38 @@ exports.createchatroom=async (req,res)=>{
                     let {error} = validateData(req.body) // equals to result.error or object destructuring
                     if(error ) return res.status(404).send(error.details[0].message);
                     console.log(req.body);
-                                    
+                    //Checkinf whether room exists or not        
                     await Room.findOne({name:req.body.name},async (err,room)=>{
                         if(err){
-                            res.send(err)
+                            return res.send(err)
                         }if(room){
                             res.send('Room with this name is already exists')
                         }else{
                            try {
-                              const room = new Room({
-                                //   name:req.body.name,
-                                //   adminId:req.user._id
-                                "roomData.$.name": req.body.name
-                              }) 
-                              await room.save()
+
+                            //   const room = new Room({
+                            //     //   name:req.body.name,
+                            //     //   adminId:req.user._id
+                            //     "roomData.$.name": req.body.name
+                            //   }) 
+
+
+                            //Saving room in the Database     
+                            const room = new Room({
+                                name: req.body.name,
+                                adminId: req.user._id,
+                                users:req.user.name
+                                
+                            })
+
+                            await room.save()
                                         .then(result=>console.log(result))
                                         .catch(err=>console.log(err));
 
 
                               res.send(`${req.body.name} created`)
                            } catch (error) {
-                               res.send(error)
+                               return res.send(error)
                            }
                         }
                     })
@@ -491,9 +505,17 @@ exports.accesschatrooms=async (req,res)=>{
     try {
         console.log(req.user);
         if (req.user) {
-            res.send('hello')
+            await Room.find({users:req.user.name},{userId:0,_id:0,__v:0,adminId:0,users:0},(err,rooms)=>{
+                if (err) {
+                    res.send(err)
+                }if (rooms) {
+                    res.send(rooms)
+                }if(!rooms){
+                    res.send('Unauthorized')
+                }
+            })
         } else {
-            
+            res.send('Unauthorized')
         }
         
         
@@ -543,34 +565,39 @@ exports.deletechatroom= async (req,res)=>{
         //checking whether logged in or not
         if (req.user._id) {
             //comparing user's id with storage 
-            await User.findOne({_id:req.user_id},(err,user)=>{
+            await Room.findOne({adminId:req.user._id},(err,user)=>{
                 if (err) {
                     res.send(err)
                 } if (user) {
                     //further checking rooms in db
-                    User.findOne({rooms:req.body.name},async (err,room)=>{
+                    Room.findOne({name:req.body.name},async (err,room)=>{
                         if (err) {
-                            res.send(err)
+                            return res.send(err)
                         } if (!room) {
-                            res.send('No room with this Name')
+                            return res.send('No room with this Name')
                         }else{
-                            // variable for poping up the room
-                            const dataToSet = {
-                                $pop :{
-                                    rooms:req.body.name
-                                }
-                            }
-                            // checking criteria
-                            const criteria = {
-                                _id:req.user._id
-                            }
-                            console.log('biucbod',criteria);
-                            console.log('bnonfiowjenfro',dataToSet);
+                            // // variable for poping up the room
+                            // const dataToSet = {
+                            //     $pop :{
+                            //         name:req.body.name
+                            //     }
+                            // }
+                            // // checking criteria
+                            // const criteria = {
+                            //     adminId:req.user._id
+                            // }
+                            // console.log('biucbod',criteria);
+                            // console.log('bnonfiowjenfro',dataToSet);
                             
                             
-                            //updating the database
-                                await User.update(criteria,dataToSet)
-                            res.send(`${req.body.name} has been deleted`)
+                            //deleting the room froom the database
+                                await Room.deleteOne(/*criteria,dataToSet*/ {name:req.body.name},(err,room)=>{
+                                    if(err){
+                                        return res.send(err)
+                                    }if (room) {  
+                                        res.send(`${req.body.name} deleted`)
+                                    }
+                                })
                         }
                     })
                 }if(!user){
@@ -589,8 +616,10 @@ exports.deletechatroom= async (req,res)=>{
 //addusers
 exports.addusers= async (req,res)=>{
     try {
+        // cheking authorization
         if (req.user._id) {
-            await User.findOne({_id:req.user._id},async (err,user)=>{
+            // checking whether admin or not
+            await Room.findOne({adminId:req.user._id},async (err,user)=>{
                 if (err) {
                     res.send(err)
                 }if (!user) {
@@ -607,7 +636,8 @@ exports.addusers= async (req,res)=>{
                     let {error} = validateData(req.body) // equals to result.error or object destructuring
                     if(error ) return res.status(404).send(error.details[0].message);
                     console.log(req.body);
-
+                    
+                    // checking whether room exists or not
                     await Room.findOne({name:req.body.name},async (err,room)=>{
                         if(err){
                             res.send(err)
@@ -615,16 +645,42 @@ exports.addusers= async (req,res)=>{
                             res.send('No room with this name ')
                         }else{
                             try {
-                                let dataToSet={
-                                    $push:{
-                                        users:req.body.user
+                                // Adding user in the room
+                                await User.findOne({name:req.body.user},async (err,user)=>{
+                                    // console.log('========',user);
+                                    
+                                    if(err){
+                                        return res.send(err)
+                                    }if(!user){
+                                        return res.send('User not exists')
+                                    }else{
+                                        //checking whether user already exists or not
+                                        await Room.findOne({users:req.body.user},async (err,result)=>{
+                                            console.log('====================',result);
+                                            
+                                            if (err) {
+                                                res.send(err)
+                                            }if(result){
+                                                res.send(`${req.body.user} already in the room ${req.body.name}`)
+                                            }else{
+                                                let dataToSet={
+                                                    $push:{
+                                                        users:req.body.user,
+                                                        // userId:user._id
+                                                    }
+                                                }
+                                                let criteria={
+                                                    name:req.body.name
+                                                }
+                                                // updating the database
+                                                await Room.update(criteria,dataToSet)
+                                                res.send(`${req.body.user} is added in the Room ${req.body.name}`)
+
+                                            }
+                                        })
                                     }
-                                }
-                                let criteria={
-                                    rooms:req.body.name
-                                }
-                                await Room.update(criteria,dataToSet)
-                                res.send(`${req.body.user} is added in the Room ${req.body.name}`)
+                                })
+                                
                             } catch (error) {
                                 res.send(error)
                             }
@@ -640,10 +696,7 @@ exports.addusers= async (req,res)=>{
     }
 }
 
-//Invite User
-exports.inviteuser= async (req,res)=>{
-    
-}
+
 
 
 //chatroom list

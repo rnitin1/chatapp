@@ -9,19 +9,18 @@ const passport = require('passport')
 router.post('/emailverificationforsignup',user.emailverification)//------done==
 router.post('/signup',user.signup);//-------done
 router.post('/login',checkNotAuthenticate,passport.authenticate('local',{}),user.login);//-----done
-// router.post('/loginwithfacebook',user.loginwithfacebook);
 router.post('/resetpasswordtoken',user.resetpasswordtoken)//---done==
 router.post('/resetpassword',user.resetpassword);//-------------done==
 router.put('/changepassword',checkAuthenticate,user.changepassword);//-----------done==
 router.delete('/logout',checkAuthenticate,user.logout);//---------------done==
 router.post('/uploadimage',checkAuthenticate,upload.uploadimage);//-----done====
-router.put('/createchatroom',checkAuthenticate,user.createchatroom);
+router.put('/createchatroom',checkAuthenticate,user.createchatroom);//=======done====
 router.post('/searchuser',checkAuthenticate,user.searchuser)//============done==
-router.post('/inviteuser',user.inviteuser);
-router.put('/deletechatroom',checkAuthenticate,user.deletechatroom);
-router.get('/accesschatrooms',checkAuthenticate,user.accesschatrooms);
+router.delete('/deletechatroom',checkAuthenticate,user.deletechatroom);//======done=====
+router.get('/accesschatrooms',checkAuthenticate,user.accesschatrooms);// ==============done==
 router.put('/edituserprofile',checkAuthenticate, user.edituserprofile);//-----done===
-router.put('/addusers',user.addusers);
+router.put('/addusers',checkAuthenticate,user.addusers);//=============done====
+// router.post('/loginwithfacebook',user.loginwithfacebook);
 // router.get('/chatmessages',user.chatmessages);
 
 
