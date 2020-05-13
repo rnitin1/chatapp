@@ -20,7 +20,7 @@ router.delete('/deletechatroom',checkAuthenticate,user.deletechatroom);//======d
 router.get('/accesschatrooms',checkAuthenticate,user.accesschatrooms);// ==============done==
 router.put('/edituserprofile',checkAuthenticate, user.edituserprofile);//-----done===
 router.put('/addusers',checkAuthenticate,user.addusers);//=============done====
-// router.post('/loginwithfacebook',user.loginwithfacebook);
+router.post('/loginwithfacebook',user.loginwithfacebook);
 // router.get('/chatmessages',user.chatmessages);
 
 

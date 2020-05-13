@@ -320,6 +320,40 @@
                 }],
                 "responses":{}
             }
+        },
+        "/loginwithfacebook":{
+            "post":{
+                "x-swagger-router-controller":"middleware-name1",
+                "opertionid":"signup",
+                "parameters":[
+                    {
+                        "in":"formData",
+                        "name":"facebookId",
+                        "required":"true",
+                        "description":"Enter FacebookId",
+                        "type":"string",
+                        "value":""
+                    },
+                    {
+                    "in":"formData",
+                    "name":"email",
+                    "required":"true",
+                    "description":"Enter email",
+                    "type":"string",
+                    "value":""
+                },
+                {
+                    "in":"formData",
+                    "name":"name",
+                    "required":"true",
+                    "description":"Enter Name",
+                    "type":"string",
+                    "value":""
+                }
+                
+            ],
+                "responses":{}
+            }
         }
         
     }

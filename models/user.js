@@ -28,26 +28,11 @@ const User = new Schema ({
             type:Array, 
             default:"" 
         },
-        
-        
-    // facebook :{
-    //     type:String,
-    //     token:String,
-    //     email:{
-    //         type:String,
-    //         trim:true,
-    //         default:null
-    //     }
-    // },
-    // google :{
-    //     type:String,
-    //     token:String,
-    //     email:{
-    //         type:String,
-    //         trim:true,
-    //         default:null
-    //     }
-    // },
+        isOnline:{
+            type:Boolean,
+            default:false
+        },
+    
     image:{
         type:Array,
         default:null
@@ -67,11 +52,6 @@ const User = new Schema ({
 
 
 
-// const messageSchema =new Schema({
-//     room:roomSchema,
-//     user: userSchema,
-//     message_body: String
-// })
 
 // const notificationSchema = new Schema ({
 //     otherUserId:{
@@ -89,6 +69,5 @@ const User = new Schema ({
 // })
 
 module.exports = mongoose.model('User',User)
-// module.exports=mongoose.model('Room',roomSchema),
 // module.exports =mongoose.model('Message',messageSchema)
 // module.exports =mongoose.model('Notification',notificationSchema)

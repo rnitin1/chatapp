@@ -8,10 +8,12 @@ const path = require('path')
 const session= require('express-session');
 const passport = require('passport')
 const initializePassport = require('./config/passport')
+const chat = require('./lib/socketManager')
 require('dotenv').config()
-const socketio = require('socket.io')
+const socket = require('socket.io')
 const http = require('http');
 const server = http.createServer(app);
+// socket.connectSocket(server)
 
 
 
@@ -50,6 +52,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 app.use('/',user);
+chat.connectSocket(server)
+// socket(chat)
 
 const port = process.env.PORT || 5000 ;
 server.listen(port, ()=>console.log(`server is running at port ${port}`));

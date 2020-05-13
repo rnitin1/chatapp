@@ -8,6 +8,7 @@ const async = require('async');
 const EmailVer = require('../models/emailVerification');
 const Room = require('../models/room');
 const randomstring=require('randomstring')
+const FbLogin = require('../models/fbogin')
 
 
 // Registering the user
@@ -147,7 +148,8 @@ exports.login= async (req,res)=>{
    let token = await randomstring.generate(150);
    let dataToSet = {
        $set: {
-           accessToken: token
+           accessToken: token,
+           isOnline:true
        }
    }
 //    console.log('==============',req.user)
@@ -156,13 +158,56 @@ exports.login= async (req,res)=>{
    
  }
 
+ //login with facebook
+ exports.loginwithfacebook= async (req, res) =>{
+    try {
+        FbLogin.findOne({facebookId:req.body.facebookId},async (err,user)=>{
+            if(err){
+                res.send(err)
+            }if(user){
+                return res.send(user)
+            }else{
+                const validateData = (user)=>{
+                    const schema = {
+                        facebookId:joi.string().trim().min(3),
+                        email:req.body.email,
+                        name:joi.string().trim().min(3),
+                        }
+                        return joi.validate(user,schema);
+                        }
+                let {error} = validateData(req.body) // equals to result.error or object destructuring
+                if(error ) return res.status(404).send(error.details[0].message);
+                console.log(req.body);
+    
+                let fbogin = new FbLogin({
+                    name:req.body.name,
+                    email:req.body.email,
+                    facebookId:req.body.facebookId
+                })
+                
+                await fbogin.save()
+                            .then(result=>console.log(result))
+                            .catch(err=>console.log(err));
+                res.send(fbogin)
+            }
+        })
+ 
+
+    } catch (err) {
+        console.log('================', err);
+    }
+
+}
+
+
  //logout
  exports.logout=async (req,res)=>{
     try{
         // Updating access token to null
         let dataToSet = {
             $set: {
-                accessToken: ""
+                accessToken: "",
+                isOnline:false
             }
         }
         await User.update({_id:req.user._id},dataToSet);
@@ -373,7 +418,7 @@ exports.searchuser=async (req,res)=>{
        if(error ) return res.status(404).send(error.details[0].message);
        console.log(req.body);
        // finding the user by name 
-        User.findOne({name:req.body.name},{password:0,deviceToken:0,accessToken:0,_id:0,__v:0},(err,user)=>{
+        User.findOne({name:req.body.name},{password:0,deviceToken:0,accessToken:0,_id:0,__v:0,rooms:0},(err,user)=>{
             if(err){
                 return res.send(err)
             }else{
@@ -505,6 +550,7 @@ exports.accesschatrooms=async (req,res)=>{
     try {
         console.log(req.user);
         if (req.user) {
+            // Finding user in the rooms
             await Room.find({users:req.user.name},{userId:0,_id:0,__v:0,adminId:0,users:0},(err,rooms)=>{
                 if (err) {
                     res.send(err)
@@ -631,8 +677,8 @@ exports.addusers= async (req,res)=>{
                             user:joi.string().trim().min(3),
                             name:joi.string().trim().min(3)
                             }
-                            return joi.validate(user,schema);
-                            }
+                        return joi.validate(user,schema);
+                    }
                     let {error} = validateData(req.body) // equals to result.error or object destructuring
                     if(error ) return res.status(404).send(error.details[0].message);
                     console.log(req.body);
@@ -654,23 +700,25 @@ exports.addusers= async (req,res)=>{
                                     }if(!user){
                                         return res.send('User not exists')
                                     }else{
-                                        //checking whether user already exists or not
-                                        await Room.findOne({users:req.body.user},async (err,result)=>{
-                                            console.log('====================',result);
+                                        //comparing id's of that specific room
+                                        await Room.findOne({_id:room._id},async (err,result)=>{
+                                            console.log('====================',result.users);
                                             
                                             if (err) {
                                                 res.send(err)
-                                            }if(result){
-                                                res.send(`${req.body.user} already in the room ${req.body.name}`)
+                                            }
+                                            // checking whether user already in tje room or not
+                                            if(result.users==req.body.user){
+                                                return res.send(`${req.body.user} is already in the room ${req.body.name}`)
                                             }else{
                                                 let dataToSet={
                                                     $push:{
                                                         users:req.body.user,
-                                                        // userId:user._id
+                                                        userId:user._id
                                                     }
                                                 }
                                                 let criteria={
-                                                    name:req.body.name
+                                                    _id:result._id
                                                 }
                                                 // updating the database
                                                 await Room.update(criteria,dataToSet)
@@ -695,7 +743,6 @@ exports.addusers= async (req,res)=>{
         res.send(error)
     }
 }
-
 
 
 
