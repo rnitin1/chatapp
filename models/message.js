@@ -2,18 +2,25 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 
-
 const Message =new Schema({
     room:{
-        type:Array,
-        ref:Room
+        type:Schema.Types.ObjectId,
+        ref:"Room"
     },
     user: {
-        type:Array,
-        ref:User
+        type:Schema.Types.ObjectId,
+        ref:"User"
     },
     message: String,
-    messageType:String
+    senderId:{
+        type:Schema.Types.ObjectId,
+        ref:"Room"
+    },
+
+    chatCreateTime: {
+        type: Date,
+        default: Date.now
+    }
 })
 
 

@@ -21,7 +21,7 @@ const server = http.createServer(app);
 app.use('/documentation',swaggerUi.serve,swaggerUi.setup(swaggerJsDocs));
 
 //connection to mongodb
-mongoose.connect("mongodb://localhost/chat-app"
+mongoose.connect("mongodb://localhost:27017/chat-app"
             ,{useNewUrlParser:true
             ,useUnifiedTopology:true}
 )

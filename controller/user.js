@@ -519,7 +519,8 @@ exports.createchatroom=async (req,res)=>{
                             const room = new Room({
                                 name: req.body.name,
                                 adminId: req.user._id,
-                                users:req.user.name
+                                users:req.user.name,
+                                userId:req.user._id
                                 
                             })
 
@@ -820,28 +821,3 @@ exports.addusers= async (req,res)=>{
 //         console.log(err.code);
 //     }
 // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

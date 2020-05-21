@@ -24,10 +24,6 @@ const User = new Schema ({
             trim:true,
             default:null
         },
-        rooms:{
-            type:Array, 
-            default:"" 
-        },
         isOnline:{
             type:Boolean,
             default:false
@@ -53,20 +49,6 @@ const User = new Schema ({
 
 
 
-// const notificationSchema = new Schema ({
-//     otherUserId:{
-//         type:Schema.Types.ObjectId,
-//         user:userSchema
-//     },
-//     userId:{
-//         type:Schema.Types.ObjectId,
-//         user:userSchema
-//     },
-//     notificationStatus:{
-//         type:String,
-//         default:"PENDING"
-//     }
-// })
 
 module.exports = mongoose.model('User',User)
 // module.exports =mongoose.model('Message',messageSchema)

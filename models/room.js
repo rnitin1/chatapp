@@ -4,10 +4,10 @@ const Schema = mongoose.Schema;
 
 
 const Room = new Schema({
-    userId: { type:Array,ref: "User", default : "" },
+    userId: [{ type:Schema.Types.ObjectId,ref: "User", default : "" }],
     name: { type: String },
     users: { type: Array,default:"" },
     adminId:{type:Schema.Types.ObjectId, ref:"User", default: null}
 })
 
-module.exports = mongoose.model('Room', Room)
+module.exports = mongoose.model('Room', Room) 
